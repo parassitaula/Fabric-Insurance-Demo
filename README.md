@@ -129,7 +129,9 @@ Each Silver notebook demonstrates:
 
 ## Architecture
 
-Open [docs/architecture.html](docs/architecture.html) in a browser for the full interactive architecture document including:
+**[View Interactive Architecture Document](https://parassitaula.github.io/Fabric-Insurance-Demo/docs/architecture.html)**
+
+The architecture doc includes:
 - Solution architecture flow diagram
 - Entity Relationship Diagram (ERD)
 - Technology stack details
@@ -173,7 +175,7 @@ Open `wh_insurance` in the Fabric SQL editor and run the sample queries from [wa
 - **Create a Lakehouse shortcut** — point `lh_bronze_insurance` at an external ADLS Gen2 container
 
 ### Review the Architecture
-Open [docs/architecture.html](docs/architecture.html) in a browser for the interactive architecture document with ERD, data flow diagrams, and KPI definitions.
+Open the [interactive architecture document](https://parassitaula.github.io/Fabric-Insurance-Demo/docs/architecture.html) for ERD, data flow diagrams, and KPI definitions.
 
 ## Prerequisites
 
