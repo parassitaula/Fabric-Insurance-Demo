@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fabric Insurance Demo — Architecture</title>
+<style>
+/* ===== RESET & BASE ===== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d1117;--surface:#161b22;--card:#1c2128;--border:#30363d;
+  --text:#c9d1d9;--text-muted:#8b949e;--heading:#e6edf3;
+  --accent:#58a6ff;--accent2:#3fb950;--accent3:#d29922;--accent4:#f85149;
+  --purple:#bc8cff;--pink:#f778ba;
+  --radius:10px;--shadow:0 4px 24px rgba(0,0,0,.4);
+}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  background:var(--bg);color:var(--text);line-height:1.7;padding:0}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* ===== NAV ===== */
+nav{position:sticky;top:0;z-index:100;background:rgba(13,17,23,.92);
+  backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:12px 0}
+nav .inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:24px;padding:0 24px;flex-wrap:wrap}
+nav .logo{font-size:18px;font-weight:700;color:var(--heading);white-space:nowrap}
+nav .logo span{color:var(--accent)}
+nav a.nav-link{font-size:13px;color:var(--text-muted);font-weight:500;transition:color .2s}
+nav a.nav-link:hover{color:var(--accent);text-decoration:none}
+
+/* ===== HERO ===== */
+.hero{text-align:center;padding:80px 24px 60px;
+  background:linear-gradient(135deg,#0d1117 0%,#161b22 50%,#0d1117 100%)}
+.hero h1{font-size:42px;color:var(--heading);margin-bottom:12px}
+.hero h1 span{color:var(--accent)}
+.hero p{font-size:18px;color:var(--text-muted);max-width:700px;margin:0 auto 24px}
+.badge-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;
+  border-radius:20px;font-size:12px;font-weight:600;border:1px solid var(--border);background:var(--surface)}
+.badge.blue{color:var(--accent);border-color:#1f3a5f}
+.badge.green{color:var(--accent2);border-color:#1a4024}
+.badge.yellow{color:var(--accent3);border-color:#3d2e00}
+.badge.purple{color:var(--purple);border-color:#2d2052}
+
+/* ===== SECTIONS ===== */
+section{max-width:1200px;margin:0 auto;padding:60px 24px}
+section h2{font-size:28px;color:var(--heading);margin-bottom:8px}
+section .subtitle{font-size:15px;color:var(--text-muted);margin-bottom:32px}
+
+/* ===== CARDS GRID ===== */
+.card-grid{display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:24px;transition:border-color .2s,transform .2s}
+.card:hover{border-color:var(--accent);transform:translateY(-2px)}
+.card .icon{font-size:28px;margin-bottom:12px}
+.card h3{font-size:17px;color:var(--heading);margin-bottom:6px}
+.card p{font-size:13px;color:var(--text-muted);line-height:1.6}
+
+/* ===== ARCHITECTURE DIAGRAM ===== */
+.arch-container{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:40px 24px;overflow-x:auto}
+.arch-flow{display:flex;align-items:stretch;gap:0;min-width:900px;justify-content:center}
+.arch-layer{flex:1;max-width:200px;text-align:center;padding:24px 16px;border-radius:var(--radius);
+  border:2px solid;position:relative}
+.arch-layer.source{border-color:#8b949e;background:rgba(139,148,158,.08)}
+.arch-layer.bronze{border-color:var(--accent3);background:rgba(210,153,34,.08)}
+.arch-layer.silver{border-color:var(--text);background:rgba(201,209,217,.06)}
+.arch-layer.gold{border-color:var(--accent3);background:rgba(210,153,34,.12)}
+.arch-layer.serve{border-color:var(--accent);background:rgba(88,166,255,.08)}
+.arch-layer h4{font-size:14px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.arch-layer.source h4{color:#8b949e}
+.arch-layer.bronze h4{color:var(--accent3)}
+.arch-layer.silver h4{color:var(--text)}
+.arch-layer.gold h4{color:#e3b341}
+.arch-layer.serve h4{color:var(--accent)}
+.arch-layer ul{list-style:none;font-size:12px;color:var(--text-muted)}
+.arch-layer ul li{padding:3px 0}
+.arch-arrow{display:flex;align-items:center;padding:0 6px;color:var(--text-muted);font-size:22px}
+
+/* ===== DATA MODEL TABLE ===== */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+table th{background:var(--surface);color:var(--heading);text-align:left;padding:10px 14px;
+  font-weight:600;border-bottom:2px solid var(--border);position:sticky;top:0}
+table td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text)}
+table tr:hover td{background:rgba(88,166,255,.04)}
+table code{background:var(--surface);padding:2px 6px;border-radius:4px;font-size:12px;color:var(--accent)}
+
+/* ===== NOTEBOOK INVENTORY ===== */
+.nb-list{display:grid;gap:12px}
+.nb-item{display:grid;grid-template-columns:160px 1fr auto;gap:16px;align-items:center;
+  padding:14px 20px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius)}
+.nb-item .nb-name{font-weight:600;font-size:14px;color:var(--heading);font-family:'Consolas','Courier New',monospace}
+.nb-item .nb-desc{font-size:13px;color:var(--text-muted)}
+.nb-item .nb-layer{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;
+  padding:4px 10px;border-radius:4px;white-space:nowrap}
+.nb-layer.setup{background:rgba(139,148,158,.15);color:#8b949e}
+.nb-layer.bronze{background:rgba(210,153,34,.15);color:var(--accent3)}
+.nb-layer.silver{background:rgba(201,209,217,.1);color:var(--text)}
+.nb-layer.gold{background:rgba(227,179,65,.15);color:#e3b341}
+
+/* ===== NAMING CONVENTIONS ===== */
+.convention-grid{display:grid;gap:12px}
+.conv-row{display:grid;grid-template-columns:180px 1fr;gap:16px;padding:12px 20px;
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius);align-items:center}
+.conv-row .pattern{font-family:'Consolas','Courier New',monospace;font-size:14px;color:var(--accent);font-weight:600}
+.conv-row .desc{font-size:13px;color:var(--text-muted)}
+
+/* ===== QUALITY RULES ===== */
+.rules-list{display:grid;gap:10px}
+.rule{display:flex;align-items:flex-start;gap:12px;padding:12px 20px;
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius)}
+.rule .r-icon{font-size:18px;flex-shrink:0;margin-top:2px}
+.rule .r-text{font-size:13px;color:var(--text)}
+.rule .r-text strong{color:var(--heading)}
+
+/* ===== KPI CARDS ===== */
+.kpi-grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:20px;text-align:center;transition:border-color .2s}
+.kpi:hover{border-color:var(--accent2)}
+.kpi .kpi-label{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:6px}
+.kpi .kpi-value{font-size:28px;font-weight:700;color:var(--heading)}
+.kpi .kpi-unit{font-size:12px;color:var(--text-muted)}
+
+/* ===== FOOTER ===== */
+footer{text-align:center;padding:40px 24px;border-top:1px solid var(--border);
+  color:var(--text-muted);font-size:13px;margin-top:40px}
+footer a{color:var(--accent)}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:768px){
+  .hero h1{font-size:28px}
+  .arch-flow{flex-direction:column;min-width:auto;align-items:center}
+  .arch-arrow{transform:rotate(90deg);padding:6px 0}
+  .nb-item{grid-template-columns:1fr;gap:6px}
+  .conv-row{grid-template-columns:1fr;gap:4px}
+  nav .inner{gap:12px}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== NAV ===== -->
+<nav>
+  <div class="inner">
+    <div class="logo">Fabric<span>InsuranceDemo</span></div>
+    <a class="nav-link" href="#architecture">Architecture</a>
+    <a class="nav-link" href="#tech-stack">Tech Stack</a>
+    <a class="nav-link" href="#data-model">Data Model</a>
+    <a class="nav-link" href="#notebooks">Notebooks</a>
+    <a class="nav-link" href="#quality">Data Quality</a>
+    <a class="nav-link" href="#naming">Naming</a>
+    <a class="nav-link" href="#kpis">KPIs</a>
+  </div>
+</nav>
+
+<!-- ===== HERO ===== -->
+<div class="hero">
+  <h1>Fabric Insurance <span>Demo Platform</span></h1>
+  <p>A modern end-to-end data platform built on Microsoft Fabric showcasing the Medallion Architecture for the insurance industry.</p>
+  <div class="badge-row">
+    <span class="badge blue">&#9830; Microsoft Fabric</span>
+    <span class="badge green">&#9679; Medallion Architecture</span>
+    <span class="badge yellow">&#9733; PySpark + Delta Lake</span>
+    <span class="badge purple">&#9670; 7 Insurance Tables</span>
+  </div>
+</div>
+
+<!-- ===== ARCHITECTURE ===== -->
+<section id="architecture">
+  <h2>Architecture Overview</h2>
+  <p class="subtitle">Data flows left to right through four layers in the Medallion Architecture pattern.</p>
+
+  <div class="arch-container">
+    <div class="arch-flow">
+      <!-- Source -->
+      <div class="arch-layer source">
+        <h4>Source</h4>
+        <ul>
+          <li>7 CSV Files</li>
+          <li>Mock data generator</li>
+          <li>~2% intentional bad data</li>
+          <li>random.seed(42)</li>
+        </ul>
+      </div>
+      <div class="arch-arrow">&#10132;</div>
+      <!-- Bronze -->
+      <div class="arch-layer bronze">
+        <h4>Bronze</h4>
+        <ul>
+          <li>Raw ingestion</li>
+          <li>CSV &#8594; Delta Lake</li>
+          <li>+_source_file</li>
+          <li>+_ingested_at</li>
+          <li>Overwrite mode</li>
+        </ul>
+      </div>
+      <div class="arch-arrow">&#10132;</div>
+      <!-- Silver -->
+      <div class="arch-layer silver">
+        <h4>Silver</h4>
+        <ul>
+          <li>Type casting</li>
+          <li>Null validation</li>
+          <li>Deduplication</li>
+          <li>Quarantine rejects</li>
+          <li>+_processed_at</li>
+        </ul>
+      </div>
+      <div class="arch-arrow">&#10132;</div>
+      <!-- Gold -->
+      <div class="arch-layer gold">
+        <h4>Gold</h4>
+        <ul>
+          <li>Claims Summary</li>
+          <li>Premium Revenue</li>
+          <li>Customer 360</li>
+          <li>KPI Metrics</li>
+        </ul>
+      </div>
+      <div class="arch-arrow">&#10132;</div>
+      <!-- Serve -->
+      <div class="arch-layer serve">
+        <h4>Serve</h4>
+        <ul>
+          <li>SQL Analytics Endpoint</li>
+          <li>Fabric Warehouse</li>
+          <li>Power BI (DirectLake)</li>
+          <li>Semantic Model</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== TECH STACK ===== -->
+<section id="tech-stack">
+  <h2>Technology Stack</h2>
+  <p class="subtitle">All components are native to the Microsoft Fabric ecosystem.</p>
+  <div class="card-grid">
+    <div class="card">
+      <div class="icon">&#128451;</div>
+      <h3>Fabric Lakehouse</h3>
+      <p>Unified storage layer combining the best of data lakes and data warehouses. Stores Bronze, Silver, and Gold Delta tables.</p>
+    </div>
+    <div class="card">
+      <div class="icon">&#9889;</div>
+      <h3>Apache Spark (PySpark)</h3>
+      <p>Distributed compute engine for all data transformations. Notebooks run on Fabric Spark pools with auto-scaling.</p>
+    </div>
+    <div class="card">
+      <div class="icon">&#916;</div>
+      <h3>Delta Lake</h3>
+      <p>ACID-compliant storage format enabling time travel, schema enforcement, and efficient upserts across all layers.</p>
+    </div>
+    <div class="card">
+      <div class="icon">&#128200;</div>
+      <h3>Power BI (DirectLake)</h3>
+      <p>Real-time analytics directly from Delta Lake. No data movement needed — DirectLake mode reads parquet files natively.</p>
+    </div>
+    <div class="card">
+      <div class="icon">&#128736;</div>
+      <h3>Fabric Data Pipelines</h3>
+      <p>Orchestration layer for scheduling and sequencing notebook execution across Bronze → Silver → Gold layers.</p>
+    </div>
+    <div class="card">
+      <div class="icon">&#128450;</div>
+      <h3>Fabric Warehouse (T-SQL)</h3>
+      <p>SQL analytics endpoint for ad-hoc querying. Enables BI analysts to query Gold tables using familiar T-SQL syntax.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== DATA MODEL ===== -->
+<section id="data-model">
+  <h2>Data Model</h2>
+  <p class="subtitle">7 insurance domain tables with realistic relationships and ~2% seeded bad data for quality testing.</p>
+
+  <!-- ERD-like Relationship Diagram -->
+  <div class="arch-container" style="margin-bottom:32px;text-align:center">
+    <svg viewBox="0 0 800 380" xmlns="http://www.w3.org/2000/svg" style="max-width:800px;width:100%">
+      <!-- Entity Boxes -->
+      <rect x="20" y="20" width="150" height="55" rx="8" fill="#1c2128" stroke="#58a6ff" stroke-width="2"/>
+      <text x="95" y="42" fill="#e6edf3" font-size="13" font-weight="700" text-anchor="middle">Customers</text>
+      <text x="95" y="60" fill="#8b949e" font-size="10" text-anchor="middle">752 rows | PK: customer_id</text>
+
+      <rect x="20" y="310" width="150" height="55" rx="8" fill="#1c2128" stroke="#58a6ff" stroke-width="2"/>
+      <text x="95" y="332" fill="#e6edf3" font-size="13" font-weight="700" text-anchor="middle">Agents</text>
+      <text x="95" y="350" fill="#8b949e" font-size="10" text-anchor="middle">50 rows | PK: agent_id</text>
+
+      <rect x="310" y="130" width="150" height="55" rx="8" fill="#1c2128" stroke="#d29922" stroke-width="2"/>
+      <text x="385" y="152" fill="#e6edf3" font-size="13" font-weight="700" text-anchor="middle">Policies</text>
+      <text x="385" y="170" fill="#8b949e" font-size="10" text-anchor="middle">1003 rows | PK: policy_id</text>
+
+      <rect x="570" y="20" width="150" height="55" rx="8" fill="#1c2128" stroke="#3fb950" stroke-width="2"/>
+      <text x="645" y="42" fill="#e6edf3" font-size="13" font-weight="700" text-anchor="middle">Coverages</text>
+      <text x="645" y="60" fill="#8b949e" font-size="10" text-anchor="middle">2000 rows | PK: coverage_id</text>
+
+      <rect x="570" y="130" width="150" height="55" rx="8" fill="#1c2128" stroke="#3fb950" stroke-width="2"/>
+      <text x="645" y="152" fill="#e6edf3" font-size="13" font-weight="700" text-anchor="middle">Premiums</text>
+      <text x="645" y="170" fill="#8b949e" font-size="10" text-anchor="middle">3003 rows | PK: premium_id</text>
+
+      <rect x="570" y="240" width="150" height="55" rx="8" fill="#1c2128" stroke="#f85149" stroke-width="2"/>
+      <text x="645" y="262" fill="#e6edf3" font-size="13" font-weight="700" text-anchor="middle">Claims</text>
+      <text x="645" y="280" fill="#8b949e" font-size="10" text-anchor="middle">802 rows | PK: claim_id</text>
+
+      <rect x="570" y="310" width="150" height="55" rx="8" fill="#1c2128" stroke="#f85149" stroke-width="2"/>
+      <text x="645" y="332" fill="#e6edf3" font-size="13" font-weight="700" text-anchor="middle">Claim Payments</text>
+      <text x="645" y="350" fill="#8b949e" font-size="10" text-anchor="middle">502 rows | PK: payment_id</text>
+
+      <!-- Relationship Lines -->
+      <!-- Customer -> Policy -->
+      <line x1="170" y1="48" x2="310" y2="148" stroke="#58a6ff" stroke-width="1.5" stroke-dasharray="6,3"/>
+      <text x="220" y="86" fill="#58a6ff" font-size="10" transform="rotate(24,220,86)">customer_id</text>
+
+      <!-- Agent -> Policy -->
+      <line x1="170" y1="338" x2="310" y2="168" stroke="#58a6ff" stroke-width="1.5" stroke-dasharray="6,3"/>
+      <text x="220" y="268" fill="#58a6ff" font-size="10" transform="rotate(-24,220,268)">agent_id</text>
+
+      <!-- Policy -> Coverage -->
+      <line x1="460" y1="145" x2="570" y2="48" stroke="#d29922" stroke-width="1.5" stroke-dasharray="6,3"/>
+      <text x="505" y="88" fill="#d29922" font-size="10" transform="rotate(-30,505,88)">policy_id</text>
+
+      <!-- Policy -> Premium -->
+      <line x1="460" y1="158" x2="570" y2="158" stroke="#d29922" stroke-width="1.5" stroke-dasharray="6,3"/>
+      <text x="515" y="150" fill="#d29922" font-size="10">policy_id</text>
+
+      <!-- Policy -> Claims -->
+      <line x1="460" y1="172" x2="570" y2="258" stroke="#d29922" stroke-width="1.5" stroke-dasharray="6,3"/>
+      <text x="505" y="225" fill="#d29922" font-size="10" transform="rotate(30,505,225)">policy_id</text>
+
+      <!-- Claim -> Claim Payments -->
+      <line x1="645" y1="295" x2="645" y2="310" stroke="#f85149" stroke-width="1.5" stroke-dasharray="6,3"/>
+      <text x="660" y="305" fill="#f85149" font-size="10">claim_id</text>
+    </svg>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Table</th><th>Rows</th><th>Primary Key</th><th>Foreign Keys</th><th>Key Columns</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Customers</strong></td><td>752</td><td><code>customer_id</code></td><td>—</td>
+          <td>first_name, last_name, email, phone, date_of_birth, address, city, state, zip_code, customer_since</td>
+        </tr>
+        <tr>
+          <td><strong>Agents</strong></td><td>50</td><td><code>agent_id</code></td><td>—</td>
+          <td>first_name, last_name, region, license_number, hire_date, status</td>
+        </tr>
+        <tr>
+          <td><strong>Policies</strong></td><td>1,003</td><td><code>policy_id</code></td>
+          <td><code>customer_id</code>, <code>agent_id</code></td>
+          <td>policy_type, effective_date, expiration_date, status, annual_premium</td>
+        </tr>
+        <tr>
+          <td><strong>Coverages</strong></td><td>2,000</td><td><code>coverage_id</code></td>
+          <td><code>policy_id</code></td>
+          <td>coverage_type, coverage_limit, deductible_amount</td>
+        </tr>
+        <tr>
+          <td><strong>Premiums</strong></td><td>3,003</td><td><code>premium_id</code></td>
+          <td><code>policy_id</code></td>
+          <td>billing_period, amount_due, amount_paid, payment_date, payment_status</td>
+        </tr>
+        <tr>
+          <td><strong>Claims</strong></td><td>802</td><td><code>claim_id</code></td>
+          <td><code>policy_id</code></td>
+          <td>date_of_loss, date_filed, claim_type, claim_status, estimated_amount, description</td>
+        </tr>
+        <tr>
+          <td><strong>Claim Payments</strong></td><td>502</td><td><code>payment_id</code></td>
+          <td><code>claim_id</code></td>
+          <td>payment_date, payment_amount, payment_method</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===== NOTEBOOKS ===== -->
+<section id="notebooks">
+  <h2>Notebook Inventory</h2>
+  <p class="subtitle">13 PySpark notebooks organized by Medallion layer. Execute in order from top to bottom.</p>
+  <div class="nb-list">
+    <div class="nb-item">
+      <span class="nb-name">nb_00</span>
+      <span class="nb-desc">Generate Mock Data — Creates 7 CSV files with realistic insurance data (~2% bad data seeded)</span>
+      <span class="nb-layer setup">Setup</span>
+    </div>
+    <div class="nb-item">
+      <span class="nb-name">nb_01</span>
+      <span class="nb-desc">Bronze Ingest — Reads all 7 CSVs, adds metadata columns (_source_file, _ingested_at), writes Delta tables</span>
+      <span class="nb-layer bronze">Bronze</span>
+    </div>
+    <div class="nb-item">
+      <span class="nb-name">nb_02</span>
+      <span class="nb-desc">Silver Customers — Type casting, null validation, dedup on customer_id, quarantine rejects</span>
+      <span class="nb-layer silver">Silver</span>
+    </div>
+    <div class="nb-item">
+      <span class="nb-name">nb_03</span>
+      <span class="nb-desc">Silver Agents — Type casting, null validation, dedup on agent_id, standardize status</span>
+      <span class="nb-layer silver">Silver</span>
+    </div>
+    <div class="nb-item">
+      <span class="nb-name">nb_04</span>
+      <span class="nb-desc">Silver Policies — Type casting (dates, premium amount), null validation, dedup on policy_id</span>
+      <span class="nb-layer silver">Silver</span>
+    </div>
+    <div class="nb-item">
+      <span class="nb-name">nb_05</span>
+      <span class="nb-desc">Silver Coverages — Type casting (limit, deductible), null validation, dedup on coverage_id</span>
+      <span class="nb-layer silver">Silver</span>
+    </div>
+    <div class="nb-item">
+      <span class="nb-name">nb_06</span>
+      <span class="nb-desc">Silver Premiums — Type casting (amounts, dates), null validation, dedup on premium_id</span>
+      <span class="nb-layer silver">Silver</span>
+    </div>
+    <div class="nb-item">
+      <span class="nb-name">nb_07</span>
+      <span class="nb-desc">Silver Claims — Type casting (dates, estimated_amount), null validation, dedup on claim_id</span>
+      <span class="nb-layer silver">Silver</span>
+    </div>
+    <div class="nb-item">
+      <span class="nb-name">nb_08</span>
+      <span class="nb-desc">Silver Claim Payments — Type casting (amount, date), null validation, dedup on payment_id</span>
+      <span class="nb-layer silver">Silver</span>
+    </div>
+    <div class="nb-item">
+      <span class="nb-name">nb_09</span>
+      <span class="nb-desc">Gold Claims Summary — Aggregated claims by year/type/status with payment totals and avg days to file</span>
+      <span class="nb-layer gold">Gold</span>
+    </div>
+    <div class="nb-item">
+      <span class="nb-name">nb_10</span>
+      <span class="nb-desc">Gold Premium Revenue — Revenue breakdown by policy type, billing period, and payment status</span>
+      <span class="nb-layer gold">Gold</span>
+    </div>
+    <div class="nb-item">
+      <span class="nb-name">nb_11</span>
+      <span class="nb-desc">Gold Customer 360 — Full customer view: policies, premiums, claims, risk score per customer</span>
+      <span class="nb-layer gold">Gold</span>
+    </div>
+    <div class="nb-item">
+      <span class="nb-name">nb_12</span>
+      <span class="nb-desc">Gold KPI Metrics — Executive KPIs: loss ratio, collection rate, claim approval rate, portfolio stats</span>
+      <span class="nb-layer gold">Gold</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===== DATA QUALITY ===== -->
+<section id="quality">
+  <h2>Data Quality Rules</h2>
+  <p class="subtitle">Applied consistently across all Silver notebooks to ensure data integrity.</p>
+  <div class="rules-list">
+    <div class="rule">
+      <span class="r-icon">&#9888;</span>
+      <span class="r-text"><strong>Null Validation</strong> — Required fields are checked for null and empty-string values. Rows failing validation are routed to quarantine tables with a <code>_rejection_reason</code> column.</span>
+    </div>
+    <div class="rule">
+      <span class="r-icon">&#128270;</span>
+      <span class="r-text"><strong>Deduplication</strong> — Each Silver table is deduplicated on its business key (e.g., customer_id, policy_id). When duplicates exist, the row with the latest <code>_ingested_at</code> timestamp is kept.</span>
+    </div>
+    <div class="rule">
+      <span class="r-icon">&#128295;</span>
+      <span class="r-text"><strong>Type Casting</strong> — String columns from CSV are cast to appropriate types: dates to <code>DateType</code>, monetary amounts to <code>DoubleType</code>. Invalid casts result in null values caught by validation.</span>
+    </div>
+    <div class="rule">
+      <span class="r-icon">&#128196;</span>
+      <span class="r-text"><strong>String Trimming</strong> — All string columns are trimmed of leading/trailing whitespace before validation to prevent false negatives.</span>
+    </div>
+    <div class="rule">
+      <span class="r-icon">&#128338;</span>
+      <span class="r-text"><strong>Metadata Lineage</strong> — Bronze adds <code>_source_file</code> and <code>_ingested_at</code>. Silver and Gold add <code>_processed_at</code>. Enables full data lineage tracking.</span>
+    </div>
+    <div class="rule">
+      <span class="r-icon">&#9989;</span>
+      <span class="r-text"><strong>Idempotent Processing</strong> — All notebooks use <code>overwrite</code> mode with <code>overwriteSchema: true</code>. Re-running any notebook produces identical results without side effects.</span>
+    </div>
+    <div class="rule">
+      <span class="r-icon">&#128202;</span>
+      <span class="r-text"><strong>Quarantine Reporting</strong> — Each Silver notebook prints counts of valid vs. rejected rows. Quarantine tables are available for inspection and remediation.</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===== NAMING CONVENTIONS ===== -->
+<section id="naming">
+  <h2>Naming Conventions</h2>
+  <p class="subtitle">Standardized naming patterns from the project constitution ensure consistency across all artifacts.</p>
+  <div class="convention-grid">
+    <div class="conv-row">
+      <span class="pattern">lh_&lt;layer&gt;_&lt;domain&gt;</span>
+      <span class="desc">Lakehouse — e.g., <code>lh_bronze_insurance</code>, <code>lh_silver_insurance</code>, <code>lh_gold_insurance</code></span>
+    </div>
+    <div class="conv-row">
+      <span class="pattern">nb_&lt;##&gt;_&lt;layer&gt;_&lt;name&gt;</span>
+      <span class="desc">Notebook — e.g., <code>nb_01_bronze_ingest</code>, <code>nb_09_gold_claims_summary</code></span>
+    </div>
+    <div class="conv-row">
+      <span class="pattern">pl_&lt;layer&gt;_&lt;domain&gt;</span>
+      <span class="desc">Pipeline — e.g., <code>pl_bronze_insurance</code>, <code>pl_silver_insurance</code></span>
+    </div>
+    <div class="conv-row">
+      <span class="pattern">wh_&lt;domain&gt;</span>
+      <span class="desc">Warehouse — e.g., <code>wh_insurance</code></span>
+    </div>
+    <div class="conv-row">
+      <span class="pattern">sm_&lt;domain&gt;</span>
+      <span class="desc">Semantic Model — e.g., <code>sm_insurance</code></span>
+    </div>
+    <div class="conv-row">
+      <span class="pattern">rpt_&lt;domain&gt;_&lt;purpose&gt;</span>
+      <span class="desc">Report — e.g., <code>rpt_insurance_claims_dashboard</code></span>
+    </div>
+    <div class="conv-row">
+      <span class="pattern">&lt;table&gt;_quarantine</span>
+      <span class="desc">Quarantine table — e.g., <code>customers_quarantine</code>, <code>claims_quarantine</code></span>
+    </div>
+  </div>
+</section>
+
+<!-- ===== KPI DEFINITIONS ===== -->
+<section id="kpis">
+  <h2>KPI Definitions</h2>
+  <p class="subtitle">Key Performance Indicators computed in the Gold layer for executive dashboards.</p>
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-label">Loss Ratio</div>
+      <div class="kpi-value" style="color:var(--accent4)">%</div>
+      <div class="kpi-unit">Claim Payouts ÷ Premium Collected × 100</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Collection Rate</div>
+      <div class="kpi-value" style="color:var(--accent2)">%</div>
+      <div class="kpi-unit">Premium Paid ÷ Premium Due × 100</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Claim Approval Rate</div>
+      <div class="kpi-value" style="color:var(--accent)">%</div>
+      <div class="kpi-unit">Approved Claims ÷ Total Claims × 100</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Avg Days to File</div>
+      <div class="kpi-value" style="color:var(--accent3)">days</div>
+      <div class="kpi-unit">Avg(date_filed − date_of_loss)</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Active Policies</div>
+      <div class="kpi-value" style="color:var(--accent2)">#</div>
+      <div class="kpi-unit">Count policies where status = 'active'</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Policies per Agent</div>
+      <div class="kpi-value" style="color:var(--purple)">ratio</div>
+      <div class="kpi-unit">Total Policies ÷ Active Agents</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Customer Risk Score</div>
+      <div class="kpi-value" style="color:var(--pink)">ratio</div>
+      <div class="kpi-unit">Total Claims ÷ Total Policies per Customer</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Avg Annual Premium</div>
+      <div class="kpi-value" style="color:var(--accent3)">$</div>
+      <div class="kpi-unit">Avg(annual_premium) across all policies</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer>
+  <p><strong>Fabric Insurance Demo</strong> — Self-contained architecture documentation</p>
+  <p style="margin-top:8px">Built with Microsoft Fabric &middot; Medallion Architecture &middot; PySpark &middot; Delta Lake</p>
+  <p style="margin-top:8px;font-size:11px;color:var(--text-muted)">Zero external dependencies — all CSS, SVG, and content are inline.</p>
+</footer>
+
+</body>
+</html>

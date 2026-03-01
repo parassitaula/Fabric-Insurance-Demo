@@ -1,0 +1,35 @@
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Environment
+.env
+.venv/
+venv/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Fabric workspace metadata (local only)
+.lakehouse/
+.warehouse/
+.pbir/
+
+# Generated data (created by nb_00 at runtime)
+data/
+
+# SpecKit / IDE / CI metadata (not needed for Fabric deployment)
+specs/
+.specify/
+.vscode/
+.github/
