@@ -10,7 +10,7 @@ A modern data platform demo for the insurance industry built on **Microsoft Fabr
 - **Data Quality** — ~2% intentional bad data seeded for demonstrating validation, null checks, and quarantine tables
 - **Warehouse SQL** — 8 T-SQL analytical queries for the Fabric Warehouse
 - **Self-Contained Architecture Doc** — Interactive HTML with ERD, architecture diagrams, and KPI definitions
-- **One-Click Deployment** — Single prerequisite notebook deploys all artifacts to any Fabric workspace
+- **One-Click Deployment** — Single prerequisite notebook creates artifacts, binds lakehouses, and executes the full pipeline
 
 ## Project Structure
 
@@ -43,13 +43,13 @@ Fabric-Insurance-Demo/
 ### Option A: One-Click Deployment (Recommended)
 
 1. Create a **Fabric workspace** with capacity assigned
-2. Import `notebooks/nb_prereq_deploy.ipynb` into the workspace
-3. Update **Cell 2** with your `WORKSPACE_ID`
+2. Import all notebooks from `notebooks/` into the workspace
+3. Open `nb_prereq_deploy` and update **Cell 3** with your `WORKSPACE_ID`
 4. **Run All** — the notebook will:
-   - Create 3 Lakehouses (Bronze, Silver, Gold)
-   - Create 1 Warehouse
-   - Upload all 13 pipeline notebooks
-   - Optionally execute all notebooks in sequence (nb_00 generates mock data automatically)
+   - Create 3 Lakehouses (Bronze, Silver, Gold) and 1 Warehouse
+   - Discover all 13 pipeline notebooks already in the workspace
+   - Execute notebooks in order with proper lakehouse bindings
+   - Create cross-layer table shortcuts (Bronze→Silver, Silver→Gold)
 
 ### Option B: Git Integration
 
