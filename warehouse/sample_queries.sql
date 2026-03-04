@@ -1,10 +1,13 @@
 -- ============================================================
 -- Fabric Insurance Demo - Warehouse Sample Queries (T-SQL)
--- Target: wh_insurance (Fabric Warehouse / SQL Analytics Endpoint)
+-- Target: wh_insurance (Fabric Warehouse)
 -- ============================================================
--- These queries run against the Gold and Silver Delta tables
--- exposed via the SQL Analytics Endpoint of the Lakehouse,
--- or mirrored into a Fabric Warehouse.
+-- These queries use cross-database 3-part naming to read Silver
+-- and Gold Delta tables directly from the Lakehouses:
+--   lh_silver_insurance.dbo.<table>
+--   lh_gold_insurance.dbo.<table>
+-- No shortcuts are needed - Fabric Warehouses support cross-
+-- database queries natively.
 -- ============================================================
 
 
@@ -18,8 +21,8 @@ SELECT
     SUM(pr.amount_paid)                    AS total_amount_paid,
     ROUND(SUM(pr.amount_paid) * 100.0
         / NULLIF(SUM(pr.amount_due), 0), 1) AS collection_rate_pct
-FROM policies p
-INNER JOIN premiums pr ON pr.policy_id = p.policy_id
+FROM lh_silver_insurance.dbo.policies p
+INNER JOIN lh_silver_insurance.dbo.premiums pr ON pr.policy_id = p.policy_id
 GROUP BY p.policy_type
 ORDER BY total_amount_paid DESC;
 
@@ -33,10 +36,10 @@ SELECT
     SUM(c.estimated_amount)                AS total_estimated,
     AVG(c.estimated_amount)                AS avg_estimated,
     COALESCE(SUM(cp.payment_amount), 0)    AS total_paid
-FROM claims c
+FROM lh_silver_insurance.dbo.claims c
 LEFT JOIN (
     SELECT claim_id, SUM(payment_amount) AS payment_amount
-    FROM claim_payments
+    FROM lh_silver_insurance.dbo.claim_payments
     GROUP BY claim_id
 ) cp ON cp.claim_id = c.claim_id
 GROUP BY c.claim_status
@@ -54,9 +57,9 @@ SELECT TOP 20
     COUNT(DISTINCT p.policy_id)             AS total_policies,
     SUM(p.annual_premium)                   AS total_annual_premium,
     COUNT(DISTINCT cl.claim_id)             AS total_claims
-FROM customers cu
-INNER JOIN policies p ON p.customer_id = cu.customer_id
-LEFT JOIN claims cl ON cl.policy_id = p.policy_id
+FROM lh_silver_insurance.dbo.customers cu
+INNER JOIN lh_silver_insurance.dbo.policies p ON p.customer_id = cu.customer_id
+LEFT JOIN lh_silver_insurance.dbo.claims cl ON cl.policy_id = p.policy_id
 GROUP BY cu.customer_id, cu.first_name, cu.last_name, cu.city, cu.state
 ORDER BY total_annual_premium DESC;
 
@@ -72,7 +75,7 @@ SELECT
     SUM(pr.amount_paid)                     AS total_paid,
     ROUND(SUM(pr.amount_paid) * 100.0
         / NULLIF(SUM(pr.amount_due), 0), 1) AS collection_rate_pct
-FROM premiums pr
+FROM lh_silver_insurance.dbo.premiums pr
 GROUP BY pr.billing_period, pr.payment_status
 ORDER BY pr.billing_period, pr.payment_status;
 
@@ -84,13 +87,13 @@ SELECT
     ROUND(
         COALESCE(SUM(cp.payment_amount), 0) * 100.0
         / NULLIF(
-            (SELECT SUM(amount_paid) FROM premiums WHERE payment_status = 'paid'), 0
+            (SELECT SUM(amount_paid) FROM lh_silver_insurance.dbo.premiums WHERE payment_status = 'paid'), 0
           ), 1
     ) AS loss_ratio_pct,
     COALESCE(SUM(cp.payment_amount), 0)         AS total_claim_payouts,
-    (SELECT SUM(amount_paid) FROM premiums
+    (SELECT SUM(amount_paid) FROM lh_silver_insurance.dbo.premiums
      WHERE payment_status = 'paid')              AS total_premium_collected
-FROM claim_payments cp;
+FROM lh_silver_insurance.dbo.claim_payments cp;
 
 
 -- ============================================================
@@ -106,11 +109,11 @@ SELECT TOP 10
     c.estimated_amount,
     COALESCE(pay.total_paid, 0)             AS total_paid,
     DATEDIFF(DAY, c.date_of_loss, c.date_filed) AS days_to_file
-FROM claims c
-INNER JOIN policies p ON p.policy_id = c.policy_id
+FROM lh_silver_insurance.dbo.claims c
+INNER JOIN lh_silver_insurance.dbo.policies p ON p.policy_id = c.policy_id
 LEFT JOIN (
     SELECT claim_id, SUM(payment_amount) AS total_paid
-    FROM claim_payments
+    FROM lh_silver_insurance.dbo.claim_payments
     GROUP BY claim_id
 ) pay ON pay.claim_id = c.claim_id
 ORDER BY c.estimated_amount DESC;
@@ -131,9 +134,9 @@ SELECT
         COUNT(DISTINCT cl.claim_id) * 100.0
         / NULLIF(COUNT(DISTINCT p.policy_id), 0), 1
     )                                       AS claims_per_policy_pct
-FROM agents a
-LEFT JOIN policies p ON p.agent_id = a.agent_id
-LEFT JOIN claims cl ON cl.policy_id = p.policy_id
+FROM lh_silver_insurance.dbo.agents a
+LEFT JOIN lh_silver_insurance.dbo.policies p ON p.agent_id = a.agent_id
+LEFT JOIN lh_silver_insurance.dbo.claims cl ON cl.policy_id = p.policy_id
 GROUP BY a.agent_id, a.first_name, a.last_name, a.region, a.status
 ORDER BY total_annual_premium DESC;
 
@@ -147,7 +150,7 @@ SELECT
     COUNT(*)                                AS claim_count,
     SUM(c.estimated_amount)                 AS total_estimated,
     AVG(c.estimated_amount)                 AS avg_estimated
-FROM claims c
+FROM lh_silver_insurance.dbo.claims c
 WHERE c.date_filed IS NOT NULL
 GROUP BY FORMAT(c.date_filed, 'yyyy-MM'), c.claim_type
 ORDER BY filed_month, c.claim_type;
