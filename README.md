@@ -44,7 +44,7 @@ Fabric-Insurance-Demo/
 
 1. Create a **Fabric workspace** with capacity assigned
 2. Import all notebooks from `notebooks/` into the workspace
-3. Open `nb_prereq_deploy` and update **Cell 3** with your `WORKSPACE_ID`
+3. Open `nb_prereq_deploy` and update `WORKSPACE_ID` in the **Configuration** section (first code cell)
 4. **Run All** — the notebook will:
    - Create 3 Lakehouses (Bronze, Silver, Gold) and 1 Warehouse
    - Discover all 13 pipeline notebooks already in the workspace
